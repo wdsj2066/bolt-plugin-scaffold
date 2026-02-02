@@ -4,7 +4,7 @@ import com.example.bolt.plugin.AbstractPlugin;
 import com.example.bolt.plugin.api.PluginContext;
 import com.example.bolt.plugin.api.PluginException;
 import com.example.bolt.plugin.api.PluginResult;
-import com.example.bolt.plugin.api.PluginType;
+
 
 import java.sql.*;
 import java.util.ArrayList;
@@ -52,8 +52,8 @@ public class DatabasePlugin extends AbstractPlugin {
     }
 
     @Override
-    public PluginType getPluginType() {
-        return PluginType.DATASOURCE;
+    public String getPluginType() {
+        return "DATASOURCE";
     }
 
     @Override

@@ -3,7 +3,7 @@ package com.example.bolt.plugin.examples;
 import com.example.bolt.plugin.AbstractPlugin;
 import com.example.bolt.plugin.api.PluginContext;
 import com.example.bolt.plugin.api.PluginResult;
-import com.example.bolt.plugin.api.PluginType;
+
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -47,8 +47,8 @@ public class EchoPlugin extends AbstractPlugin {
     }
 
     @Override
-    public PluginType getPluginType() {
-        return PluginType.CUSTOM;
+    public String getPluginType() {
+        return "CUSTOM";
     }
 
     @Override

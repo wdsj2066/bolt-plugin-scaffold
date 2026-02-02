@@ -4,7 +4,6 @@ import com.example.bolt.plugin.AbstractPlugin;
 import com.example.bolt.plugin.api.PluginContext;
 import com.example.bolt.plugin.api.PluginException;
 import com.example.bolt.plugin.api.PluginResult;
-import com.example.bolt.plugin.api.PluginType;
 
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
@@ -51,11 +50,6 @@ public class HttpClientPlugin extends AbstractPlugin {
     @Override
     public String getAuthor() {
         return "Bolt Team";
-    }
-
-    @Override
-    public PluginType getPluginType() {
-        return PluginType.CUSTOM;
     }
 
     @Override
