@@ -24,6 +24,21 @@ public abstract class AbstractPlugin implements Plugin {
     private final Map<String, ActionHandler> actionHandlers = new ConcurrentHashMap<>();
 
     @Override
+    public String getPluginName() {
+        return getPluginId();
+    }
+
+    @Override
+    public String getDescription() {
+        return "";
+    }
+
+    @Override
+    public String getAuthor() {
+        return "";
+    }
+
+    @Override
     public void initialize(PluginConfig config, PluginContext context) throws PluginException {
         this.config = config;
         this.initContext = context;

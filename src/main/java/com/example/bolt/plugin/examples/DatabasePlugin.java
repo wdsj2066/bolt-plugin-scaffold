@@ -4,6 +4,7 @@ import com.example.bolt.plugin.AbstractPlugin;
 import com.example.bolt.plugin.api.PluginContext;
 import com.example.bolt.plugin.api.PluginException;
 import com.example.bolt.plugin.api.PluginResult;
+import com.example.bolt.plugin.api.PluginType;
 
 import java.sql.*;
 import java.util.ArrayList;
@@ -33,6 +34,26 @@ public class DatabasePlugin extends AbstractPlugin {
     @Override
     public String getVersion() {
         return VERSION;
+    }
+
+    @Override
+    public String getPluginName() {
+        return "数据库插件";
+    }
+
+    @Override
+    public String getDescription() {
+        return "提供数据库查询和操作功能的插件";
+    }
+
+    @Override
+    public String getAuthor() {
+        return "Bolt Team";
+    }
+
+    @Override
+    public PluginType getPluginType() {
+        return PluginType.DATASOURCE;
     }
 
     @Override

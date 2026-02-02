@@ -4,6 +4,7 @@ import com.example.bolt.plugin.AbstractPlugin;
 import com.example.bolt.plugin.api.PluginContext;
 import com.example.bolt.plugin.api.PluginException;
 import com.example.bolt.plugin.api.PluginResult;
+import com.example.bolt.plugin.api.PluginType;
 
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
@@ -35,6 +36,26 @@ public class HttpClientPlugin extends AbstractPlugin {
     @Override
     public String getVersion() {
         return VERSION;
+    }
+
+    @Override
+    public String getPluginName() {
+        return "HTTP 客户端插件";
+    }
+
+    @Override
+    public String getDescription() {
+        return "提供HTTP请求功能的插件，支持GET、POST、PUT、DELETE等方法";
+    }
+
+    @Override
+    public String getAuthor() {
+        return "Bolt Team";
+    }
+
+    @Override
+    public PluginType getPluginType() {
+        return PluginType.CUSTOM;
     }
 
     @Override

@@ -3,6 +3,7 @@ package com.example.bolt.plugin.examples;
 import com.example.bolt.plugin.AbstractPlugin;
 import com.example.bolt.plugin.api.PluginContext;
 import com.example.bolt.plugin.api.PluginResult;
+import com.example.bolt.plugin.api.PluginType;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -28,6 +29,26 @@ public class EchoPlugin extends AbstractPlugin {
     @Override
     public String getVersion() {
         return VERSION;
+    }
+
+    @Override
+    public String getPluginName() {
+        return "Echo 插件";
+    }
+
+    @Override
+    public String getDescription() {
+        return "一个简单的回显插件，用于测试和学习插件系统";
+    }
+
+    @Override
+    public String getAuthor() {
+        return "Bolt Team";
+    }
+
+    @Override
+    public PluginType getPluginType() {
+        return PluginType.CUSTOM;
     }
 
     @Override

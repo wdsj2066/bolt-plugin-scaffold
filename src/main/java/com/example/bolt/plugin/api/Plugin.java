@@ -22,6 +22,38 @@ public interface Plugin {
     String getVersion();
 
     /**
+     * 获取插件类型
+     * @return 插件类型，默认为CUSTOM
+     */
+    default PluginType getPluginType() {
+        return PluginType.CUSTOM;
+    }
+
+    /**
+     * 获取插件名称
+     * @return 插件显示名称，默认返回插件ID
+     */
+    default String getPluginName() {
+        return getPluginId();
+    }
+
+    /**
+     * 获取插件描述
+     * @return 插件描述，默认返回空字符串
+     */
+    default String getDescription() {
+        return "";
+    }
+
+    /**
+     * 获取插件作者
+     * @return 插件作者，默认返回空字符串
+     */
+    default String getAuthor() {
+        return "";
+    }
+
+    /**
      * 初始化插件
      * @param config 插件配置
      * @param context 插件上下文
