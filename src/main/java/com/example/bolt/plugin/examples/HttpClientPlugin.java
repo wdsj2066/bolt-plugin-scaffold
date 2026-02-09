@@ -60,6 +60,14 @@ public class HttpClientPlugin extends AbstractPlugin {
     }
 
     @Override
+    public String getDefaultConfigJson() {
+        return "{\n" +
+                "    \"defaultTimeout\": 30000,\n" +
+                "    \"defaultRetryCount\": 3\n" +
+                "}";
+    }
+
+    @Override
     protected void doDestroy() {
         logger.info("HttpClientPlugin 已销毁");
     }

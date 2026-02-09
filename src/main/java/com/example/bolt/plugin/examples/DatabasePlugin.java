@@ -75,6 +75,15 @@ public class DatabasePlugin extends AbstractPlugin {
     }
 
     @Override
+    public String getDefaultConfigJson() {
+        return "{\n" +
+                "    \"jdbcUrl\": \"jdbc:mysql://localhost:3306/mydb\",\n" +
+                "    \"username\": \"root\",\n" +
+                "    \"password\": \"your_password\"\n" +
+                "}";
+    }
+
+    @Override
     protected void doDestroy() {
         // 清理资源（如果有连接池的话）
         logger.info("DatabasePlugin 已销毁");

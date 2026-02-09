@@ -120,4 +120,14 @@ public interface Plugin {
     default PluginHealthStatus getHealthStatus() {
         return PluginHealthStatus.healthy();
     }
+
+    /**
+     * 获取默认配置JSON
+     * 返回插件的默认配置模板，用于创建实例时自动填充
+     *
+     * @return 默认配置JSON字符串
+     */
+    default String getDefaultConfigJson() {
+        return "{}";
+    }
 }
