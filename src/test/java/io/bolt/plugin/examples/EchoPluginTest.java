@@ -1,8 +1,8 @@
-package com.example.bolt.plugin.examples;
+package io.bolt.plugin.examples;
 
-import com.example.bolt.plugin.api.PluginConfig;
-import com.example.bolt.plugin.api.PluginContext;
-import com.example.bolt.plugin.api.PluginResult;
+import io.bolt.plugin.api.PluginConfig;
+import io.bolt.plugin.api.PluginContext;
+import io.bolt.plugin.api.PluginResult;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;

@@ -27,7 +27,7 @@ plugin-scaffold/
     │   │           └── DatabasePlugin.java   # 数据库插件
     │   └── resources/
     │       └── META-INF/services/   # SPI 服务注册
-    │           └── com.example.bolt.plugin.api.Plugin
+    │           └── api.io.bolt.plugin.Plugin
     └── test/                        # 测试代码
 ```
 
@@ -90,7 +90,10 @@ mvn clean package
 ```java
 package com.example.bolt.plugin;
 
-import com.example.bolt.plugin.api.*;
+import io.bolt.plugin.AbstractPlugin;
+import io.bolt.plugin.api.PluginContext;
+import io.bolt.plugin.api.PluginResult;
+
 import java.util.Map;
 
 public class MyPlugin extends AbstractPlugin {
@@ -131,15 +134,15 @@ public class MyPlugin extends AbstractPlugin {
         String output = input.toUpperCase();
 
         return PluginResult.success(Map.of(
-            "output", output,
-            "timestamp", System.currentTimeMillis()
+                "output", output,
+                "timestamp", System.currentTimeMillis()
         ));
     }
 
     private PluginResult doStatus(Map<String, Object> params, PluginContext context) {
         return PluginResult.success(Map.of(
-            "status", "running",
-            "pluginId", getPluginId()
+                "status", "running",
+                "pluginId", getPluginId()
         ));
     }
 }
@@ -150,9 +153,9 @@ public class MyPlugin extends AbstractPlugin {
 ```java
 package com.example.bolt.plugin;
 
-import com.example.bolt.plugin.api.*;
+import io.bolt.plugin.api.*;
+
 import java.util.Map;
-import java.util.concurrent.CompletableFuture;
 
 public class MyRawPlugin implements Plugin {
 
@@ -190,7 +193,7 @@ public class MyRawPlugin implements Plugin {
 
 ### 4. 注册插件
 
-编辑 `src/main/resources/META-INF/services/com.example.bolt.plugin.api.Plugin` 文件，添加你的插件类：
+编辑 `src/main/resources/META-INF/services/api.io.bolt.plugin.Plugin` 文件，添加你的插件类：
 
 ```
 com.example.bolt.plugin.MyPlugin

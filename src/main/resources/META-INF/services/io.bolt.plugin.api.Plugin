@@ -1,0 +1,7 @@
+# 在此注册你的插件实现类
+# 每行一个类全限定名
+
+# 示例插件
+io.bolt.plugin.examples.EchoPlugin
+# examples.io.bolt.plugin.HttpClientPlugin
+# examples.io.bolt.plugin.DatabasePlugin

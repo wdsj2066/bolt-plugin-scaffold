@@ -1,9 +1,9 @@
-package com.example.bolt.plugin.examples;
+package io.bolt.plugin.examples;
 
-import com.example.bolt.plugin.AbstractPlugin;
-import com.example.bolt.plugin.api.PluginContext;
-import com.example.bolt.plugin.api.PluginException;
-import com.example.bolt.plugin.api.PluginResult;
+import io.bolt.plugin.AbstractPlugin;
+import io.bolt.plugin.api.PluginContext;
+import io.bolt.plugin.api.PluginException;
+import io.bolt.plugin.api.PluginResult;
 
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
@@ -12,7 +12,6 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 /**

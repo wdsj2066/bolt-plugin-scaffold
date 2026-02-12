@@ -1,6 +1,7 @@
-package com.example.bolt.plugin;
+package io.bolt.plugin;
 
-import com.example.bolt.plugin.api.*;
+import io.bolt.plugin.api.*;
+import io.bolt.plugin.api.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

@@ -1,4 +1,4 @@
-package com.example.bolt.plugin.api;
+package io.bolt.plugin.api;
 
 /**
  * 插件异常

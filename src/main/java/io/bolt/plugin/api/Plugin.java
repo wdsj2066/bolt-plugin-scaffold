@@ -1,4 +1,4 @@
-package com.example.bolt.plugin.api;
+package io.bolt.plugin.api;
 
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
