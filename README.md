@@ -8,26 +8,39 @@
 plugin-scaffold/
 ├── pom.xml                          # Maven 构建配置
 ├── README.md                        # 本文件
+├── lib/                             # 依赖 JAR 目录
+│   └── bolt-plugin-api-1.0.0.jar   # Bolt 插件 API（共享）
 └── src/
     ├── main/
     │   ├── java/
-    │   │   └── com/example/bolt/plugin/
-    │   │       ├── api/             # 插件 API 接口（核心）
+    │   │   └── io/bolt/plugin/
+    │   │       ├── AbstractPlugin.java       # 抽象基类
+    │   │       ├── api/             # 插件 API 接口（来自 bolt-plugin-api）
     │   │       │   ├── Plugin.java           # 插件接口
     │   │       │   ├── PluginConfig.java     # 配置类
     │   │       │   ├── PluginContext.java    # 上下文
     │   │       │   ├── PluginResult.java     # 结果类
     │   │       │   ├── PluginException.java  # 异常类
-    │   │       │   ├── PluginHealthStatus.java # 健康状态
-    │   │       │   └── PluginType.java       # 类型枚举
-    │   │       ├── AbstractPlugin.java       # 抽象基类
+    │   │       │   └── PluginHealthStatus.java # 健康状态
+    │   │       ├── api/node/        # 节点 API（来自 bolt-plugin-api）
+    │   │       │   ├── NodeDefinition.java   # 节点定义
+    │   │       │   ├── NodeExecutor.java     # 节点执行器
+    │   │       │   ├── NodeContext.java      # 节点上下文
+    │   │       │   ├── NodeResult.java       # 节点结果
+    │   │       │   ├── NodeProvider.java     # 节点提供者
+    │   │       │   ├── NodeRegistry.java     # 节点注册表
+    │   │       │   ├── adapter/              # 适配器工具
+    │   │       │   │   └── ActionToNodeAdapter.java
+    │   │       │   └── impl/                 # 默认实现
+    │   │       │       └── DefaultNodeRegistry.java
     │   │       └── examples/        # 示例插件
     │   │           ├── EchoPlugin.java       # 回显插件
     │   │           ├── HttpClientPlugin.java # HTTP客户端
-    │   │           └── DatabasePlugin.java   # 数据库插件
+    │   │           ├── DatabasePlugin.java   # 数据库插件（传统）
+    │   │           └── ModernDatabasePlugin.java # 数据库插件（新架构）
     │   └── resources/
     │       └── META-INF/services/   # SPI 服务注册
-    │           └── api.io.bolt.plugin.Plugin
+    │           └── io.bolt.plugin.api.Plugin
     └── test/                        # 测试代码
 ```
 
@@ -42,7 +55,9 @@ plugin-scaffold/
 | `PluginContext` | 执行上下文 | ✔ |
 | `PluginResult` | 统一结果返回 | ✔ |
 | `PluginException` | 异常定义 | ✔ |
-| `PluginType` | 插件类型枚举 | ✔ |
+| `NodeProvider` | 节点提供者接口（新） | ✖ |
+| `NodeDefinition` | 节点定义模型（新） | ✖ |
+| `NodeExecutor` | 节点执行器接口（新） | ✖ |
 
 ### 插件类型定义
 
@@ -73,7 +88,15 @@ public enum PluginType {
 - JDK 17+
 - Maven 3.8+
 
-### 2. 构建项目
+### 2. 依赖说明
+
+本脚手架依赖 `bolt-plugin-api-1.0.0.jar`，该 JAR 包包含：
+- Plugin API（插件接口和基础模型）
+- Node API（节点接口和基础模型）
+
+JAR 文件已放置在 `lib/` 目录下，通过 system scope 引入。
+
+### 3. 构建项目
 
 ```bash
 cd plugin-scaffold
@@ -83,9 +106,9 @@ mvn clean package
 构建成功后，`target/` 目录下会生成：
 - `bolt-plugin-scaffold-1.0.0.jar` - 插件 JAR 包
 
-### 3. 开发自定义插件
+### 4. 开发自定义插件
 
-#### 方式一：继承 AbstractPlugin（推荐）
+#### 方式一：继承 AbstractPlugin（推荐 - 传统 Action 模式）
 
 ```java
 package com.example.bolt.plugin;
@@ -191,15 +214,215 @@ public class MyRawPlugin implements Plugin {
 }
 ```
 
-### 4. 注册插件
+#### 方式三：使用 Node API（新架构 - 推荐）
 
-编辑 `src/main/resources/META-INF/services/api.io.bolt.plugin.Plugin` 文件，添加你的插件类：
+```java
+package com.example.bolt.plugin;
+
+import io.bolt.plugin.AbstractPlugin;
+import io.bolt.plugin.api.node.*;
+import java.util.*;
+
+public class MyNodePlugin extends AbstractPlugin {
+
+    @Override
+    public String getPluginId() {
+        return "my-node-plugin";
+    }
+
+    @Override
+    public String getVersion() {
+        return "2.0.0";
+    }
+
+    @Override
+    protected void doInitialize() {
+        // 初始化逻辑
+    }
+
+    @Override
+    public NodeProvider getNodeProvider() {
+        return new MyNodeProvider();
+    }
+
+    private class MyNodeProvider implements NodeProvider {
+
+        @Override
+        public List<NodeDefinition> getNodeDefinitions() {
+            return List.of(
+                    buildProcessNodeDefinition(),
+                    buildStatusNodeDefinition()
+            );
+        }
+
+        @Override
+        public NodeExecutor getNodeExecutor(String nodeId) {
+            if (nodeId.equals(getPluginId() + ".process")) {
+                return new ProcessNodeExecutor();
+            } else if (nodeId.equals(getPluginId() + ".status")) {
+                return new StatusNodeExecutor();
+            }
+            return null;
+        }
+
+        @Override
+        public String getProviderId() {
+            return getPluginId();
+        }
+
+        @Override
+        public String getProviderVersion() {
+            return getVersion();
+        }
+
+        private NodeDefinition buildProcessNodeDefinition() {
+            Map<String, Object> inputSchema = new HashMap<>();
+            inputSchema.put("type", "object");
+            inputSchema.put("properties", Map.of(
+                    "input", Map.of(
+                            "type", "string",
+                            "description", "输入文本"
+                    )
+            ));
+            inputSchema.put("required", List.of("input"));
+
+            return NodeDefinition.builder()
+                    .nodeId(getPluginId() + ".process")
+                    .displayName("处理文本")
+                    .description("将输入文本转换为大写")
+                    .category("utility")
+                    .version(getVersion())
+                    .providerId(getPluginId())
+                    .inputSchema(inputSchema)
+                    .enabled(true)
+                    .build();
+        }
+
+        private NodeDefinition buildStatusNodeDefinition() {
+            Map<String, Object> inputSchema = new HashMap<>();
+            inputSchema.put("type", "object");
+            inputSchema.put("properties", Map.of());
+
+            return NodeDefinition.builder()
+                    .nodeId(getPluginId() + ".status")
+                    .displayName("获取状态")
+                    .description("获取插件运行状态")
+                    .category("utility")
+                    .version(getVersion())
+                    .providerId(getPluginId())
+                    .inputSchema(inputSchema)
+                    .enabled(true)
+                    .build();
+        }
+
+        private class ProcessNodeExecutor implements NodeExecutor {
+
+            @Override
+            public String getNodeId() {
+                return getPluginId() + ".process";
+            }
+
+            @Override
+            public NodeResult doExecute(NodeContext context, Map<String, Object> input) throws Exception {
+                String text = (String) input.get("input");
+                String result = text.toUpperCase();
+                return NodeResult.success(Map.of("output", result));
+            }
+        }
+
+        private class StatusNodeExecutor implements NodeExecutor {
+
+            @Override
+            public String getNodeId() {
+                return getPluginId() + ".status";
+            }
+
+            @Override
+            public NodeResult doExecute(NodeContext context, Map<String, Object> input) throws Exception {
+                return NodeResult.success(Map.of(
+                        "status", "running",
+                        "pluginId", getPluginId()
+                ));
+            }
+        }
+    }
+}
+```
+
+#### 方式四：使用 ActionToNodeAdapter（从 Action 迁移到 Node）
+
+```java
+package com.example.bolt.plugin;
+
+import io.bolt.plugin.AbstractPlugin;
+import io.bolt.plugin.api.PluginContext;
+import io.bolt.plugin.api.PluginResult;
+import io.bolt.plugin.api.node.adapter.ActionToNodeAdapter;
+import io.bolt.plugin.api.node.NodeProvider;
+import java.util.*;
+
+public class MyAdapterPlugin extends AbstractPlugin {
+
+    private ActionToNodeAdapter nodeAdapter;
+
+    @Override
+    public String getPluginId() {
+        return "my-adapter-plugin";
+    }
+
+    @Override
+    public String getVersion() {
+        return "2.0.0";
+    }
+
+    @Override
+    protected void doInitialize() {
+        // 创建适配器
+        nodeAdapter = new ActionToNodeAdapter(this);
+        
+        // 将 Action 注册为 Node
+        Map<String, Object> inputSchema = new HashMap<>();
+        inputSchema.put("type", "object");
+        inputSchema.put("properties", Map.of(
+                "input", Map.of("type", "string")
+        ));
+        inputSchema.put("required", List.of("input"));
+        
+        nodeAdapter.addActionNode(
+                "process",
+                "处理文本",
+                "将输入文本转换为大写",
+                inputSchema
+        );
+    }
+
+    @Override
+    protected void registerActions() {
+        registerAction("process", this::doProcess);
+    }
+
+    @Override
+    public NodeProvider getNodeProvider() {
+        return nodeAdapter;
+    }
+
+    private PluginResult doProcess(Map<String, Object> params, PluginContext context) {
+        String input = (String) params.get("input");
+        String output = input.toUpperCase();
+        return PluginResult.success(Map.of("output", output));
+    }
+}
+```
+
+### 5. 注册插件
+
+编辑 `src/main/resources/META-INF/services/io.bolt.plugin.api.Plugin` 文件，添加你的插件类：
 
 ```
 com.example.bolt.plugin.MyPlugin
 ```
 
-### 5. 打包并部署
+### 6. 打包并部署
 
 ```bash
 mvn clean package
@@ -221,6 +444,7 @@ mvn clean package
 | `destroy()` | 销毁插件，释放资源 |
 | `getSupportedActions()` | 返回支持的动作列表 |
 | `getHealthStatus()` | 返回健康状态 |
+| `getNodeProvider()` | 返回节点提供者（新） |
 
 ### AbstractPlugin 辅助方法
 
@@ -229,6 +453,43 @@ mvn clean package
 | `registerAction(name, handler)` | 注册动作处理器 |
 | `getProperty(key, defaultValue)` | 获取配置属性 |
 | `getRequiredProperty(key)` | 获取必需配置属性 |
+| `getNodeProvider()` | 返回节点提供者（可重写） |
+
+### Node API（新架构）
+
+#### NodeProvider 接口
+
+| 方法 | 说明 |
+|------|------|
+| `getNodeDefinitions()` | 返回所有节点定义 |
+| `getNodeExecutor(nodeId)` | 根据节点ID获取执行器 |
+| `getProviderId()` | 返回提供者ID |
+| `getProviderVersion()` | 返回提供者版本 |
+
+#### NodeDefinition 模型
+
+```java
+NodeDefinition.builder()
+    .nodeId("plugin-id.node-name")      // 节点唯一标识
+    .displayName("显示名称")             // UI 显示名称
+    .description("描述信息")             // 详细描述
+    .category("database")                // 分类
+    .version("1.0.0")                   // 版本
+    .providerId("plugin-id")            // 提供者ID
+    .inputSchema(jsonSchema)            // JSON Schema 参数定义
+    .capabilities(Map.of(...))           // 能力声明
+    .enabled(true)                      // 是否启用
+    .build();
+```
+
+#### NodeExecutor 接口
+
+| 方法 | 说明 |
+|------|------|
+| `getNodeId()` | 返回节点ID |
+| `doExecute(context, input)` | 执行节点逻辑 |
+| `supportsAsync()` | 是否支持异步执行 |
+| `getDefaultTimeoutMs()` | 默认超时时间 |
 
 ## 示例插件说明
 
@@ -261,9 +522,9 @@ mvn clean package
 }
 ```
 
-### DatabasePlugin - 数据库插件
+### DatabasePlugin - 数据库插件（传统）
 
-演示数据库操作。
+演示数据库操作（传统 Action 模式）。
 
 **支持的动作：**
 - `query` - 查询
@@ -280,6 +541,42 @@ mvn clean package
     "password": "password"
 }
 ```
+
+### ModernDatabasePlugin - 数据库插件（新架构）
+
+演示如何使用 Node API 实现数据库插件。
+
+**提供的节点：**
+- `modern-database-plugin.query` - 查询数据
+- `modern-database-plugin.execute` - 执行 SQL
+
+**特点：**
+- 使用 NodeDefinition 定义节点元数据
+- 使用 NodeExecutor 实现节点执行逻辑
+- 支持 JSON Schema 参数验证
+- 支持异步执行
+
+## 架构对比
+
+### 传统 Action 模式 vs 新 Node 模式
+
+| 特性 | Action 模式 | Node 模式 |
+|------|------------|-----------|
+| 注册方式 | `registerAction()` | 实现 `NodeProvider` |
+| 元数据 | 无标准化 | `NodeDefinition` + JSON Schema |
+| 参数验证 | 手动实现 | 自动验证（基于 Schema） |
+| 执行模型 | 简单方法调用 | 完整执行上下文 + 结果模型 |
+| 能力声明 | 无 | `capabilities` 字段 |
+| UI 生成 | 手动配置 | 自动生成表单 |
+| 迁移成本 | - | 可使用 `ActionToNodeAdapter` |
+
+### 迁移建议
+
+1. **新插件**：直接使用 Node 模式
+2. **现有插件**：
+   - 简单插件：继续使用 Action 模式
+   - 复杂插件：考虑迁移到 Node 模式
+   - 快速迁移：使用 `ActionToNodeAdapter`
 
 ## 在 JavaScript 中调用插件
 
@@ -540,6 +837,10 @@ default String getConfigSchema() {
 4. **日志记录**：使用 `logger` 记录关键操作
 5. **资源管理**：在 `destroy()` 中释放资源
 6. **线程安全**：确保插件在多线程环境下安全
+7. **选择合适的模式**：
+   - 简单插件：使用 Action 模式
+   - 复杂插件：使用 Node 模式
+   - 迁移现有插件：使用 `ActionToNodeAdapter`
 
 ## 测试
 
@@ -557,7 +858,7 @@ ENABLE_NETWORK_TESTS=true mvn test
 
 - Bolt 系统核心类（Plugin 接口等）**不应**打包进 JAR
 - 插件所需的第三方依赖**应该**打包进 JAR
-- 本脚手架已将 `api` 包设置为 provided scope，不会被打包
+- `bolt-plugin-api` 已设置为 system scope，不会被打包
 
 ## 许可证
 

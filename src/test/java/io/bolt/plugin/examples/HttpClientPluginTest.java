@@ -33,7 +33,7 @@ class HttpClientPluginTest {
                 .properties(new HashMap<>())
                 .build();
 
-        plugin.initialize(config, PluginContext.builder().build());
+        plugin.initialize(config, PluginContext.create());
     }
 
     @Test
@@ -42,7 +42,7 @@ class HttpClientPluginTest {
         params.put("url", "https://httpbin.org/get");
         params.put("timeout", 10000);
 
-        PluginResult result = plugin.execute("get", params, PluginContext.builder().build());
+        PluginResult result = plugin.execute("get", params, PluginContext.create());
 
         assertTrue(result.isSuccess(), "请求失败: " + result.getError());
 
@@ -61,7 +61,7 @@ class HttpClientPluginTest {
         headers.put("Content-Type", "application/json");
         params.put("headers", headers);
 
-        PluginResult result = plugin.execute("post", params, PluginContext.builder().build());
+        PluginResult result = plugin.execute("post", params, PluginContext.create());
 
         assertTrue(result.isSuccess(), "请求失败: " + result.getError());
 
@@ -75,7 +75,7 @@ class HttpClientPluginTest {
         Map<String, Object> params = new HashMap<>();
         // 不传递 url 参数
 
-        PluginResult result = plugin.execute("get", params, PluginContext.builder().build());
+        PluginResult result = plugin.execute("get", params, PluginContext.create());
 
         assertFalse(result.isSuccess());
     }

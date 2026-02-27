@@ -31,9 +31,7 @@ class EchoPluginTest {
                 .properties(Map.of("greetingPrefix", "Hi"))
                 .build();
 
-        PluginContext context = PluginContext.builder()
-                .executionId("test-exec-001")
-                .build();
+        PluginContext context = PluginContext.create();
 
         plugin.initialize(config, context);
     }
@@ -59,9 +57,7 @@ class EchoPluginTest {
         params.put("message", "Hello World");
         params.put("name", "Bolt");
 
-        PluginContext context = PluginContext.builder()
-                .executionId("test-001")
-                .build();
+        PluginContext context = PluginContext.create();
 
         PluginResult result = plugin.execute("echo", params, context);
 
@@ -76,7 +72,7 @@ class EchoPluginTest {
 
     @Test
     void testPingAction() {
-        PluginContext context = PluginContext.builder().build();
+        PluginContext context = PluginContext.create();
         PluginResult result = plugin.execute("ping", new HashMap<>(), context);
 
         assertTrue(result.isSuccess());
@@ -89,7 +85,7 @@ class EchoPluginTest {
 
     @Test
     void testTimeAction() {
-        PluginContext context = PluginContext.builder().build();
+        PluginContext context = PluginContext.create();
         PluginResult result = plugin.execute("time", new HashMap<>(), context);
 
         assertTrue(result.isSuccess());
@@ -102,7 +98,7 @@ class EchoPluginTest {
 
     @Test
     void testUnsupportedAction() {
-        PluginContext context = PluginContext.builder().build();
+        PluginContext context = PluginContext.create();
         PluginResult result = plugin.execute("unsupported", new HashMap<>(), context);
 
         assertFalse(result.isSuccess());

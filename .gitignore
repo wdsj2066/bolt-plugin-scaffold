@@ -1,7 +1,6 @@
 # Compiled files
 target/
 *.class
-*.jar
 *.war
 *.ear
 

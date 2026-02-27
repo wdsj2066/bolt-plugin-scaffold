@@ -21,6 +21,15 @@
     </properties>
 
     <dependencies>
+        <!-- Bolt Plugin API -->
+        <dependency>
+            <groupId>com.example.bolt</groupId>
+            <artifactId>bolt-plugin-api</artifactId>
+            <version>${bolt.plugin.version}</version>
+            <scope>system</scope>
+            <systemPath>${project.basedir}/lib/bolt-plugin-api-1.0.0.jar</systemPath>
+        </dependency>
+
         <!-- Lombok - 可选，用于简化代码 -->
         <dependency>
             <groupId>org.projectlombok</groupId>
