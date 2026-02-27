@@ -9,30 +9,16 @@ plugin-scaffold/
 ├── pom.xml                          # Maven 构建配置
 ├── README.md                        # 本文件
 ├── lib/                             # 依赖 JAR 目录
-│   └── bolt-plugin-api-1.0.0.jar   # Bolt 插件 API（共享）
+│   └── bolt-plugin-api-1.0.0.jar   # Bolt 插件 API（来自 server 项目）
+├── build.bat                        # Windows 构建脚本
+├── build.sh                         # Linux/Mac 构建脚本
+├── create-plugin.bat                # Windows 插件创建脚本
+├── create-plugin.sh                 # Linux/Mac 插件创建脚本
 └── src/
     ├── main/
     │   ├── java/
     │   │   └── io/bolt/plugin/
     │   │       ├── AbstractPlugin.java       # 抽象基类
-    │   │       ├── api/             # 插件 API 接口（来自 bolt-plugin-api）
-    │   │       │   ├── Plugin.java           # 插件接口
-    │   │       │   ├── PluginConfig.java     # 配置类
-    │   │       │   ├── PluginContext.java    # 上下文
-    │   │       │   ├── PluginResult.java     # 结果类
-    │   │       │   ├── PluginException.java  # 异常类
-    │   │       │   └── PluginHealthStatus.java # 健康状态
-    │   │       ├── api/node/        # 节点 API（来自 bolt-plugin-api）
-    │   │       │   ├── NodeDefinition.java   # 节点定义
-    │   │       │   ├── NodeExecutor.java     # 节点执行器
-    │   │       │   ├── NodeContext.java      # 节点上下文
-    │   │       │   ├── NodeResult.java       # 节点结果
-    │   │       │   ├── NodeProvider.java     # 节点提供者
-    │   │       │   ├── NodeRegistry.java     # 节点注册表
-    │   │       │   ├── adapter/              # 适配器工具
-    │   │       │   │   └── ActionToNodeAdapter.java
-    │   │       │   └── impl/                 # 默认实现
-    │   │       │       └── DefaultNodeRegistry.java
     │   │       └── examples/        # 示例插件
     │   │           ├── EchoPlugin.java       # 回显插件
     │   │           ├── HttpClientPlugin.java # HTTP客户端
@@ -42,7 +28,16 @@ plugin-scaffold/
     │       └── META-INF/services/   # SPI 服务注册
     │           └── io.bolt.plugin.api.Plugin
     └── test/                        # 测试代码
+        └── java/
+            └── io/bolt/plugin/examples/
+                ├── EchoPluginTest.java
+                └── HttpClientPluginTest.java
 ```
+
+**注意**：
+- `bolt-plugin-api-1.0.0.jar` 包含了 Bolt 系统定义的插件 API 接口，需要从 `server` 项目中构建或获取
+- API 接口包括：`Plugin`, `PluginConfig`, `PluginContext`, `PluginResult`, `PluginException`, `PluginHealthStatus` 以及 Node API 相关接口
+- 脚手架中只包含 `AbstractPlugin` 抽象基类和示例插件代码
 
 ## 最新插件规范（v2.0）
 
@@ -91,8 +86,40 @@ public enum PluginType {
 ### 2. 依赖说明
 
 本脚手架依赖 `bolt-plugin-api-1.0.0.jar`，该 JAR 包包含：
-- Plugin API（插件接口和基础模型）
-- Node API（节点接口和基础模型）
+
+**Plugin API（插件接口和基础模型）：**
+- `Plugin` - 插件主接口
+- `PluginConfig` - 配置封装
+- `PluginContext` - 执行上下文
+- `PluginResult` - 统一结果返回
+- `PluginException` - 异常定义
+- `PluginHealthStatus` - 健康状态
+
+**Node API（节点接口和基础模型）：**
+- `NodeProvider` - 节点提供者接口
+- `NodeDefinition` - 节点定义模型
+- `NodeExecutor` - 节点执行器接口
+- `NodeContext` - 节点上下文
+- `NodeResult` - 节点结果
+- `ActionToNodeAdapter` - Action 到 Node 的适配器
+
+**获取 API JAR 的方式：**
+
+1. **从 server 项目构建**（推荐）：
+   ```bash
+   cd server
+   mvn clean package
+   # API JAR 会被打包到 server/target/classes/ 目录
+   ```
+
+2. **从 Maven 仓库获取**（如果已发布）：
+   ```xml
+   <dependency>
+       <groupId>com.example.bolt</groupId>
+       <artifactId>bolt-plugin-api</artifactId>
+       <version>1.0.0</version>
+   </dependency>
+   ```
 
 JAR 文件已放置在 `lib/` 目录下，通过 system scope 引入。
 
@@ -434,17 +461,23 @@ mvn clean package
 
 ### Plugin 接口
 
-| 方法 | 说明 |
-|------|------|
-| `getPluginId()` | 返回插件唯一标识 |
-| `getVersion()` | 返回插件版本 |
-| `initialize(config, context)` | 初始化插件 |
-| `execute(action, params, context)` | 同步执行动作 |
-| `executeAsync(action, params, context)` | 异步执行动作（可选） |
-| `destroy()` | 销毁插件，释放资源 |
-| `getSupportedActions()` | 返回支持的动作列表 |
-| `getHealthStatus()` | 返回健康状态 |
-| `getNodeProvider()` | 返回节点提供者（新） |
+| 方法 | 说明 | 是否必需 |
+|------|------|----------|
+| `getPluginId()` | 返回插件唯一标识 | ✔ |
+| `getVersion()` | 返回插件版本 | ✔ |
+| `getPluginName()` | 返回插件显示名称 | ✖（默认返回 pluginId） |
+| `getPluginType()` | 返回插件类型 | ✖（默认返回 "CUSTOM"） |
+| `getDescription()` | 返回插件描述 | ✖（默认返回空字符串） |
+| `getAuthor()` | 返回插件作者 | ✖（默认返回空字符串） |
+| `initialize(config, context)` | 初始化插件 | ✔ |
+| `execute(action, params, context)` | 同步执行动作 | ✔ |
+| `executeAsync(action, params, context)` | 异步执行动作 | ✖（默认基于 execute 实现） |
+| `destroy()` | 销毁插件，释放资源 | ✔ |
+| `getSupportedActions()` | 返回支持的动作列表 | ✖（默认返回空数组） |
+| `supportsAction(action)` | 检查是否支持某个动作 | ✖（默认实现） |
+| `getHealthStatus()` | 返回健康状态 | ✖（默认返回健康） |
+| `getDefaultConfigJson()` | 返回默认配置 JSON | ✖（默认返回 "{}"） |
+| `getNodeProvider()` | 返回节点提供者（新） | ✖（默认返回 null） |
 
 ### AbstractPlugin 辅助方法
 
@@ -503,6 +536,13 @@ NodeDefinition.builder()
 - `time` - 获取时间
 - `info` - 获取插件信息
 
+**配置示例：**
+```json
+{
+    "greetingPrefix": "Hello"
+}
+```
+
 ### HttpClientPlugin - HTTP 客户端
 
 演示如何调用外部 HTTP API。
@@ -556,6 +596,15 @@ NodeDefinition.builder()
 - 支持 JSON Schema 参数验证
 - 支持异步执行
 
+**配置示例：**
+```json
+{
+    "jdbcUrl": "jdbc:mysql://localhost:3306/mydb",
+    "username": "root",
+    "password": "password"
+}
+```
+
 ## 架构对比
 
 ### 传统 Action 模式 vs 新 Node 模式
@@ -580,11 +629,88 @@ NodeDefinition.builder()
 
 ## 在 JavaScript 中调用插件
 
-Bolt 通过 `BoltInternalApi` 暴露插件调用接口给 JavaScript 脚本。在脚本节点中，可以通过 `$bolt` 或 `$plugin` 对象调用插件。
+Bolt 通过 GraalVM JavaScript 引擎在脚本节点中执行 JavaScript 代码，并暴露了插件调用接口。
+
+### 可用的 JavaScript 对象
+
+在脚本节点中，可以使用以下对象调用插件：
+
+| 对象 | 说明 | 推荐度 |
+|------|------|--------|
+| `$bolt` | 底层插件 API，返回 JSON 字符串 | ⭐⭐ |
+| `$plugin` | 封装后的插件 API，自动解析 JSON | ⭐⭐⭐⭐⭐ |
+| `$ai` | AI 能力 API | - |
+| `$aiHelper` | AI 辅助对象 | - |
+| `$kb` | 知识库 API | - |
+| `$kbHelper` | 知识库辅助对象 | - |
+| `$http` | HTTP 客户端 | - |
+| `context` | 脚本上下文，可读写变量 | - |
+| `inputs` | 节点输入参数 | - |
+
+### 通过 $plugin 对象调用（推荐方式）
+
+`$plugin` 是 Bolt 提供的 JavaScript 辅助对象，封装了 `$bolt` 的 JSON 解析逻辑，使用更简洁：
+
+#### 1. 同步调用 - `call(instanceId, actionName, params)`
+
+```javascript
+// 同步调用插件动作
+const result = $plugin.call('my-instance-001', 'process', {
+    input: 'hello world',
+    count: 5
+});
+
+// result 已经是解析后的对象，无需 JSON.parse()
+console.log(result.output);  // 访问返回数据
+console.log(result.timestamp);
+```
+
+**参数说明：**
+| 参数 | 类型 | 说明 |
+|------|------|------|
+| `instanceId` | string | 插件实例ID（在系统中创建实例时分配） |
+| `actionName` | string | 要执行的动作名称 |
+| `params` | object | 调用参数对象 |
+
+**返回值：** 解析后的 JavaScript 对象
+
+#### 2. 异步调用 - `callAsync(instanceId, actionName, params)`
+
+```javascript
+// 异步调用（返回 Promise）
+const result = await $plugin.callAsync('my-instance-001', 'fetchData', {
+    url: 'https://api.example.com/data',
+    timeout: 30000
+});
+
+// result 已经是解析后的对象
+console.log(result.data);
+
+// 或使用 Promise 链
+$plugin.callAsync('my-instance-001', 'fetchData', params)
+    .then(data => console.log(data))
+    .catch(err => console.error(err));
+```
+
+#### 3. 批量调用 - `callBatch(calls)`
+
+```javascript
+// 批量调用多个插件动作
+const results = $plugin.callBatch([
+    { instanceId: 'db-instance-001', actionName: 'query', params: { sql: 'SELECT * FROM users' } },
+    { instanceId: 'http-instance-002', actionName: 'get', params: { url: '/api/users' } },
+    { instanceId: 'cache-instance-003', actionName: 'get', params: { key: 'user:123' } }
+]);
+
+// results 是解析后的数组
+console.log(results[0].rows);  // 查询结果
+console.log(results[1].body);  // HTTP 响应
+console.log(results[2].value); // 缓存值
+```
 
 ### 通过 $bolt 对象调用（底层API）
 
-`BoltInternalApi` 通过 GraalVM 的 `@HostAccess.Export` 注解将以下方法暴露给 JavaScript：
+`$bolt` 是 Bolt 内部 API 的直接暴露，返回 JSON 字符串，需要手动解析：
 
 #### 1. 同步调用 - `call(instanceId, action, params)`
 
@@ -603,7 +729,7 @@ console.log(result.output);  // 访问返回数据
 **参数说明：**
 | 参数 | 类型 | 说明 |
 |------|------|------|
-| `instanceId` | string | 插件实例ID（在系统中创建实例时分配） |
+| `instanceId` | string | 插件实例ID |
 | `action` | string | 要执行的动作名称 |
 | `params` | object | 调用参数对象 |
 
@@ -613,20 +739,13 @@ console.log(result.output);  // 访问返回数据
 
 ```javascript
 // 异步调用（返回 Promise）
-const promise = $bolt.callAsync('my-instance-001', 'fetchData', {
+const jsonResult = await $bolt.callAsync('my-instance-001', 'fetchData', {
     url: 'https://api.example.com/data',
     timeout: 30000
 });
 
-// 使用 await（在 async 函数中）
-const jsonResult = await $bolt.callAsync('my-instance-001', 'fetchData', params);
+// 解析 JSON 结果
 const result = JSON.parse(jsonResult);
-
-// 或使用 Promise 链
-$bolt.callAsync('my-instance-001', 'fetchData', params)
-    .then(json => JSON.parse(json))
-    .then(data => console.log(data))
-    .catch(err => console.error(err));
 ```
 
 #### 3. 批量调用 - `callBatch(calls)`
@@ -635,13 +754,11 @@ $bolt.callAsync('my-instance-001', 'fetchData', params)
 // 批量调用多个插件动作
 const calls = [
     { instanceId: 'db-instance-001', action: 'query', params: { sql: 'SELECT * FROM users' } },
-    { instanceId: 'http-instance-002', action: 'get', params: { url: '/api/users' } },
-    { instanceId: 'cache-instance-003', action: 'get', params: { key: 'user:123' } }
+    { instanceId: 'http-instance-002', action: 'get', params: { url: '/api/users' } }
 ];
 
 const jsonResults = $bolt.callBatch(calls);
 const results = JSON.parse(jsonResults);
-// results = [queryResult, httpResult, cacheResult]
 ```
 
 #### 4. 检查插件可用性 - `isAvailable(instanceId)`
@@ -664,27 +781,47 @@ console.log(stats.loadedInstances);  // 已加载实例数
 console.log(stats.totalCalls);       // 总调用次数
 ```
 
-### 通过 $plugin 对象调用（推荐方式）
+### 其他可用对象
 
-`$plugin` 是 Bolt 提供的 JavaScript 辅助对象，封装了 `$bolt` 的 JSON 解析逻辑，使用更简洁：
+#### $http - HTTP 客户端
 
 ```javascript
-// $plugin.call() 自动解析 JSON 结果
-const result = $plugin.call('my-instance-001', 'process', {
-    input: 'hello world'
-});
-// result 已经是解析后的对象，无需 JSON.parse()
+// 发送 HTTP 请求
+const response = await $http.get('https://api.example.com/data');
+console.log(response.data);
 
-// $plugin.callAsync() 返回解析后的 Promise
-const result = await $plugin.callAsync('my-instance-001', 'fetchData', {
-    url: 'https://api.example.com'
+const postResult = await $http.post('https://api.example.com/create', {
+    name: 'test',
+    value: 123
 });
+```
 
-// $plugin.callBatch() 返回解析后的数组
-const results = $plugin.callBatch([
-    { instanceId: 'instance-001', action: 'action1', params: {} },
-    { instanceId: 'instance-002', action: 'action2', params: {} }
-]);
+#### context - 脚本上下文
+
+```javascript
+// 获取工作流变量
+const userId = context.getVariable('userId');
+
+// 设置工作流变量
+context.setVariable('result', processedData);
+
+// 记录日志
+context.log('处理完成');
+context.log('info', '信息日志');
+context.log('error', '错误日志');
+
+// 获取节点信息
+const workflowId = context.workflowId;
+const instanceId = context.instanceId;
+const nodeId = context.nodeId;
+```
+
+#### inputs - 节点输入
+
+```javascript
+// 访问节点输入参数
+const inputValue = inputs.param1;
+const configValue = inputs.config.timeout;
 ```
 
 ### 完整的脚本节点示例
@@ -704,16 +841,16 @@ if (!$bolt.isAvailable('http-client-001')) {
 }
 
 // 2. 从数据库查询配置
-const dbResult = JSON.parse($bolt.call('db-mysql-001', 'query', {
+const dbResult = $plugin.call('db-mysql-001', 'query', {
     sql: 'SELECT api_url, api_key FROM configs WHERE id = ?',
     params: [configId]
-}));
+});
 
-if (!dbResult || dbResult.length === 0) {
+if (!dbResult || dbResult.rows.length === 0) {
     throw new Error('未找到配置');
 }
 
-const config = dbResult[0];
+const config = dbResult.rows[0];
 
 // 3. 异步调用外部 API
 const apiResponse = await $plugin.callAsync('http-client-001', 'post', {
@@ -722,40 +859,29 @@ const apiResponse = await $plugin.callAsync('http-client-001', 'post', {
         'Authorization': 'Bearer ' + config.api_key,
         'Content-Type': 'application/json'
     },
-    body: {
-        data: input.data,  // 来自上游节点的输入
+    body: JSON.stringify({
+        data: inputs.data,  // 来自上游节点的输入
         timestamp: new Date().toISOString()
-    },
+    }),
     timeout: 30000
 });
 
-// 4. 将结果写入缓存（批量调用示例）
-const cacheResults = $plugin.callBatch([
-    {
-        instanceId: 'redis-cache-001',
-        action: 'set',
-        params: {
-            key: 'api:response:' + input.id,
-            value: JSON.stringify(apiResponse),
-            ttl: 3600
-        }
-    },
-    {
-        instanceId: 'db-mysql-001',
-        action: 'execute',
-        params: {
-            sql: 'INSERT INTO logs (request_id, status) VALUES (?, ?)',
-            params: [input.id, apiResponse.status]
-        }
-    }
-]);
+// 4. 记录日志
+context.log('API 调用成功，状态码: ' + apiResponse.statusCode);
 
-// 5. 返回处理结果给下游节点
+// 5. 设置工作流变量供下游节点使用
+context.setVariable('apiResult', apiResponse);
+context.setVariable('processedAt', new Date().toISOString());
+
+// 6. 返回处理结果给下游节点
 return {
     success: true,
-    data: apiResponse,
-    cached: cacheResults[0] !== null,
-    logged: cacheResults[1] !== null
+    data: apiResponse.body,
+    statusCode: apiResponse.statusCode,
+    outputs: {
+        result: apiResponse.body,
+        status: apiResponse.statusCode
+    }
 };
 ```
 
@@ -764,12 +890,19 @@ return {
 ```javascript
 try {
     const result = $plugin.call('my-instance', 'riskyAction', params);
+    
+    return {
+        success: true,
+        data: result
+    };
 } catch (error) {
     // 可能的错误类型：
     // - 权限错误：无权限使用该插件实例
     // - 插件错误：插件内部执行失败
     // - 序列化错误：JSON 解析/序列化失败
     // - 超时错误：插件执行超时
+    
+    context.log('error', '插件调用失败: ' + error.message);
     
     return {
         success: false,
@@ -789,6 +922,15 @@ try {
 | `$plugin.callBatch()` | 批量执行 | 多插件协同 |
 | `$bolt.isAvailable()` | 检查状态 | 前置验证 |
 
+### 最佳实践
+
+1. **使用 `$plugin` 而不是 `$bolt`**：避免手动 JSON 解析，代码更简洁
+2. **检查插件可用性**：使用 `$bolt.isAvailable()` 确保插件已加载
+3. **合理使用异步**：长时间操作使用 `callAsync()`，避免阻塞工作流
+4. **错误处理**：使用 try-catch 捕获异常，返回友好的错误信息
+5. **日志记录**：使用 `context.log()` 记录关键操作和错误
+6. **变量传递**：使用 `context.setVariable()` 在节点间传递数据
+
 ### Java 端实现参考
 
 Java 端的 `BoltInternalApi` 实现了以下核心逻辑：
@@ -799,35 +941,7 @@ Java 端的 `BoltInternalApi` 实现了以下核心逻辑：
 4. **结果序列化**：使用 Jackson 将结果转为 JSON
 5. **异常处理**：统一包装为运行时异常
 
-关键代码路径：`server/src/main/java/com/example/bolt/workflow/script/bridge/BoltInternalApi.java`
-
-## 配置参数 Schema
-
-插件可以定义配置参数的 JSON Schema，用于系统 UI 生成配置表单：
-
-```java
-@Override
-default String getConfigSchema() {
-    return """
-    {
-        "type": "object",
-        "properties": {
-            "apiKey": {
-                "type": "string",
-                "title": "API Key",
-                "description": "API 访问密钥"
-            },
-            "timeout": {
-                "type": "integer",
-                "title": "超时时间",
-                "default": 30000
-            }
-        },
-        "required": ["apiKey"]
-    }
-    """;
-}
-```
+关键代码路径：`server/src/main/java/io/bolt/core/script/bridge/BoltInternalApi.java`
 
 ## 最佳实践
 
